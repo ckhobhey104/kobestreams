@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import flv from "flv.js";
 import { useParams as param } from "react-router";
 import { useDispatch, useSelector } from "react-redux";
@@ -10,23 +10,38 @@ const StreamShow = () => {
   const videoRef = useRef(null);
 
   const stream = useSelector((state) => state.streams[id]);
-  console.log("Stream:", stream);
 
-  const fetchDispatch = useCallback(
-    () => dispatch(fetchStream(id)),
-    [id, dispatch]
-  );
+  // const fetchDispatch = useCallback(
+  //   () => dispatch(fetchStream(id)),
+  //   [id, dispatch]
+  // );
+
+  // useEffect(() => {
+  //   fetchDispatch();
+  // }, [fetchDispatch]);
 
   useEffect(() => {
-    fetchDispatch();
-    const player = flv.createPlayer({
-      type: "flv",
-      url: `http://localhost:8000/live/${id}.flv`,
-    });
+    dispatch(fetchStream(id));
+  }, [id, dispatch]);
 
-    player.attachMediaElement(videoRef.current);
-    player.load();
-  }, [fetchDispatch, id]);
+  useEffect(() => {
+    let player;
+    if (videoRef.current) {
+      player = flv.createPlayer({
+        type: "flv",
+        url: `http://localhost:8000/live/${id}.flv`,
+      });
+
+      player.attachMediaElement(videoRef.current);
+      player.load();
+    }
+    return () => {
+      console.log(player);
+      if (player) {
+        player.destroy();
+      }
+    };
+  }, [id, stream]);
 
   const renderStream = () => {
     if (!stream) {
